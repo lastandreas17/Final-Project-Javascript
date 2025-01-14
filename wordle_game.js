@@ -13,6 +13,20 @@ const maxCols = 5;
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  
+  document.addEventListener("DOMContentLoaded", () => {
+    const savedToken = localStorage.getItem("token");
+    if (savedToken) {
+      token = savedToken; // Mengisi token dari localStorage
+      document.getElementById("login-section").style.display = "none";
+      gameSection.style.display = "block";
+      startGame(); // Memulai game langsung jika sudah login
+    } else {
+      document.getElementById("login-section").style.display = "block";
+      gameSection.style.display = "none";
+    }
+  });
+  
 
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
@@ -29,21 +43,28 @@ loginForm.addEventListener("submit", async (event) => {
     const result = await response.json();
 
     if (response.ok) {
-      token = result.token;
-      document.getElementById("login-section").style.display = "none";
-      gameSection.style.display = "block";
-      startGame();
-    } else {
-      loginError.textContent = result.message || "Login failed.";
-    }
+        token = result.token;
+        localStorage.setItem("token", token); // Menyimpan token ke localStorage
+        document.getElementById("login-section").style.display = "none";
+        gameSection.style.display = "block";
+        startGame();
+      }
+      
   } catch (error) {
     loginError.textContent = "An error occurred during login.";
   }
 });
+document.getElementById("logout-button").addEventListener("click", () => {
+    localStorage.removeItem("token"); // Menghapus token dari localStorage
+    token = ""; // Reset variabel token
+    document.getElementById("login-section").style.display = "block";
+    gameSection.style.display = "none";
+  });
+
 
 async function fetchWord() {
   try {
-    const response = await fetch("https://delta-indie.vercel.app/api/random-word-api.herokuapp.com/word");
+    const response = await fetch("https://delta-indie.vercel.app/api/random-word");
     const result = await response.json();
     if (response.ok) {
       return result.word.toUpperCase();
@@ -108,10 +129,6 @@ function getCell(row, col) {
 function submitGuess() {
   const guess = Array.from({ length: maxCols }, (_, i) => getCell(currentRow, i).textContent).join("");
 
-  if (guess.length !== maxCols) {
-    gameMessage.textContent = "Please complete the word.";
-    return;
-  }
 
   const guessResult = checkGuess(guess);
   guessResult.forEach((result, i) => {
